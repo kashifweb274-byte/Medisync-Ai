@@ -1,0 +1,166 @@
+/* WhatsApp WebRTC Call Dark Theme */
+.wa-call-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: #0b141a;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.wa-call-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  max-width: 100vw;
+  max-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem 1rem;
+  box-sizing: border-box;
+  background: radial-gradient(circle at center, #111b21 0%, #0b141a 100%);
+}
+
+/* Header */
+.wa-call-header {
+  text-align: center;
+  z-index: 10;
+}
+
+.wa-enc-badge {
+  font-size: 0.75rem;
+  color: #8696a0;
+  margin-bottom: 0.25rem;
+}
+
+.wa-doc-name {
+  color: #e9edef;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.wa-call-status {
+  color: #00a884;
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+/* Main Area */
+.wa-main-video-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.wa-doctor-avatar-big {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: #202c33;
+  border: 2px solid #00a884;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #00a884;
+  box-shadow: 0 0 20px rgba(0, 168, 132, 0.2);
+}
+
+.wa-doc-spec-text {
+  color: #8696a0;
+  font-size: 0.95rem;
+  margin-top: 1rem;
+}
+
+/* Self PIP Window */
+.wa-user-pip {
+  position: absolute;
+  right: 2rem;
+  bottom: 6rem;
+  width: 150px;
+  height: 200px;
+  background: #111b21;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid #202c33;
+  z-index: 20;
+}
+
+.wa-self-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1); /* Mirror effect */
+}
+
+.wa-pip-off {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8696a0;
+  font-size: 0.8rem;
+  background: #1f2c34;
+}
+
+/* WhatsApp Control Bar */
+.wa-controls-bar {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  background: #202c33;
+  padding: 0.75rem 1.5rem;
+  border-radius: 40px;
+  z-index: 10;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+.wa-control-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background: #2a3942;
+  color: #ffffff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.wa-control-btn:hover {
+  background: #3b4a54;
+}
+
+.wa-control-btn.off {
+  background: #ea0038;
+}
+
+.wa-control-btn.btn-hangup {
+  background: #ea0038;
+  transform: rotate(135deg);
+}
+
+.wa-control-btn.btn-hangup:hover {
+  background: #ff2a55;
+}
+
+@media (max-width: 600px) {
+  .wa-user-pip {
+    width: 110px;
+    height: 150px;
+    right: 1rem;
+    bottom: 5.5rem;
+  }
+}
