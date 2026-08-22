@@ -52,16 +52,19 @@ export default function Register() {
     } catch (err) {
       // Network Error Detection
       if (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
-        setError('Cannot connect to backend server. Please make sure Node.js server is running on port 5000.')
+        setError('Cannot connect to backend server. Please check your internet or server status.')
       } else {
-        const serverError = 
+        const rawError = 
           err.response?.data?.message || 
           err.response?.data?.error || 
           (typeof err.response?.data === 'string' ? err.response.data : null) || 
           err.message || 
           'Registration failed. Please try again.'
 
-        setError(serverError)
+        // Convert object to string to prevent React rendering errors
+        const finalMessage = typeof rawError === 'object' ? (rawError.message || JSON.stringify(rawError)) : rawError
+
+        setError(finalMessage)
       }
     } finally {
       setLoading(false)
@@ -189,7 +192,7 @@ export default function Register() {
 
             {error && (
               <p style={{ color: 'var(--danger)', fontSize: 13, fontWeight: 600, margin: '4px 0 0 0' }}>
-                {error}
+                {typeof error === 'object' ? (error.message || JSON.stringify(error)) : String(error)}
               </p>
             )}
 
