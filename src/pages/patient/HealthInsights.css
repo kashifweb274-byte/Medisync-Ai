@@ -1,3 +1,4 @@
+/* Base Container */
 .insights-container {
   padding: 24px;
   max-width: 1200px;
@@ -12,8 +13,10 @@
 .insights-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
 .insights-title {
@@ -30,23 +33,62 @@
   margin-bottom: 0;
 }
 
-.top-risk-badge {
+/* Header Buttons & Badges */
+.btn-primary {
+  background-color: #0284c7;
+  color: #ffffff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
   display: flex;
   align-items: center;
   gap: 6px;
-  background-color: #fef3c7;
-  color: #b45309;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.btn-primary:hover {
+  background-color: #0369a1;
+}
+
+.btn-secondary {
+  background-color: #ffffff;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.top-risk-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13px;
   font-weight: 600;
   padding: 6px 12px;
   border-radius: 20px;
+  border: 1px solid transparent;
 }
 
 .badge-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: #f59e0b;
+  display: inline-block;
 }
 
 /* Main Grid Layout */
@@ -55,12 +97,6 @@
   grid-template-columns: 1.1fr 1fr;
   gap: 20px;
   margin-bottom: 30px;
-}
-
-@media (max-width: 900px) {
-  .insights-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 .left-column,
@@ -77,6 +113,11 @@
   border: 1px solid #e2e8f0;
   padding: 20px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: box-shadow 0.2s ease;
+}
+
+.insight-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
 }
 
 .card-title-box {
@@ -91,7 +132,7 @@
 
 /* Card 1: Risk Level Card */
 .risk-card {
-  border-left: 5px solid #f59e0b;
+  border-left: 5px solid #0284c7;
 }
 
 .risk-card-content {
@@ -109,6 +150,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
+  flex-shrink: 0;
 }
 
 .gauge-svg {
@@ -144,8 +186,6 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background-color: #fef3c7;
-  color: #b45309;
   font-size: 12px;
   font-weight: 600;
   padding: 4px 10px;
@@ -174,8 +214,8 @@
   gap: 10px;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
-  padding: 14px 16px;
-  background-color: #fafafa;
+  padding: 12px 14px;
+  background-color: #f8fafc;
   font-size: 13px;
   font-weight: 500;
   color: #334155;
@@ -195,42 +235,52 @@
   margin: 0;
 }
 
-/* Vital Trends Empty Placeholder Card */
+/* Vital Trends Card */
 .vitals-empty-card {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 48px 24px;
-  text-align: center;
-  min-height: 200px;
+  justify-content: space-between;
 }
 
 .vital-icon-circle {
-  width: 50px;
-  height: 50px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background-color: #f0f9ff;
   color: #0284c7;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 14px;
+  margin: 0 auto 12px auto;
 }
 
 .vital-empty-title {
   font-size: 15px;
   font-weight: 700;
   color: #1e293b;
-  margin: 0 0 6px 0;
+  margin: 0 0 4px 0;
 }
 
 .vital-empty-subtitle {
   font-size: 13px;
   color: #64748b;
   max-width: 320px;
-  margin: 0;
+  margin: 0 auto;
   line-height: 1.4;
+}
+
+/* Loading Animation */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Footer Disclaimer */
@@ -240,4 +290,51 @@
   text-align: left;
   line-height: 1.5;
   margin-top: 20px;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 16px;
+}
+
+/* Responsive Layout */
+@media (max-width: 900px) {
+  .insights-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .insights-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .risk-card-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .gauge-container {
+    align-self: center;
+  }
+}
+
+/* Print Styling Optimization */
+@media print {
+  body {
+    background-color: #ffffff;
+  }
+
+  .insights-container {
+    padding: 0;
+    max-width: 100%;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .top-risk-badge {
+    display: none !important;
+  }
+
+  .insight-card {
+    box-shadow: none;
+    border: 1px solid #cbd5e1;
+    page-break-inside: avoid;
+  }
 }

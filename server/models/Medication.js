@@ -3,13 +3,13 @@ const mongoose = require("mongoose");
 const medicationSchema = new mongoose.Schema(
   {
     patientId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: mongoose.Schema.Types.Mixed, // Allows both MongoDB ObjectId and demo strings like "demo1"
       ref: "User",
       required: true,
       index: true,
     },
     doctorId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: mongoose.Schema.Types.Mixed,
       ref: "User",
     },
     name: {
@@ -19,19 +19,16 @@ const medicationSchema = new mongoose.Schema(
     },
     dosage: {
       type: String,
-      required: true,
       trim: true,
       default: "",
     },
     frequency: {
       type: String,
-      required: true,
       trim: true,
       default: "",
     },
     time: {
       type: String,
-      required: true,
       trim: true,
       default: "",
     },

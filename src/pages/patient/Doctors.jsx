@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import API from "../../api";
 import "./Doctors.css";
 
-// 15 Major Departments list
 const SPECIALTIES = [
   "All",
   "General Physician",
@@ -22,9 +22,20 @@ const SPECIALTIES = [
   "Oncologist",
 ];
 
-// Mock Doctors Data: Exactly 2 Doctors (1 Male, 1 Female) for every department
 const MOCK_DOCTORS = [
-  // General Physician
+  // 1. General Physician
+  {
+    _id: "doc_gp_faisal",
+    name: "Dr. Faisal",
+    gender: "Male",
+    specialization: "General Physician",
+    experienceYears: 5,
+    fee: 800,
+    rating: "4.8",
+    reviews: 185,
+    availability: "Mon - Sat",
+    avatar: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&q=80&w=400"
+  },
   {
     _id: "doc_gp_m",
     name: "Dr. Rajesh Sharma",
@@ -33,7 +44,9 @@ const MOCK_DOCTORS = [
     experienceYears: 10,
     fee: 500,
     rating: "4.8",
+    reviews: 256,
     availability: "Mon - Sat",
+    avatar: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=400"
   },
   {
     _id: "doc_gp_f",
@@ -43,10 +56,12 @@ const MOCK_DOCTORS = [
     experienceYears: 8,
     fee: 500,
     rating: "4.9",
+    reviews: 278,
     availability: "Mon - Sat",
+    avatar: "https://images.unsplash.com/photo-1594824813566-82823d294647?auto=format&fit=crop&q=80&w=400"
   },
 
-  // Cardiologist
+  // 2. Cardiologist
   {
     _id: "doc_cardio_m",
     name: "Dr. Vikram Rao",
@@ -55,7 +70,9 @@ const MOCK_DOCTORS = [
     experienceYears: 14,
     fee: 1000,
     rating: "4.9",
+    reviews: 312,
     availability: "Mon, Wed, Fri",
+    avatar: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=400"
   },
   {
     _id: "doc_cardio_f",
@@ -65,20 +82,12 @@ const MOCK_DOCTORS = [
     experienceYears: 11,
     fee: 1000,
     rating: "4.8",
+    reviews: 332,
     availability: "Tue, Thu, Sat",
+    avatar: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=400"
   },
 
-  // Pediatrician
-  {
-    _id: "doc_pedia_m",
-    name: "Dr. Amit Patel",
-    gender: "Male",
-    specialization: "Pediatrician",
-    experienceYears: 9,
-    fee: 600,
-    rating: "4.7",
-    availability: "Mon - Sat",
-  },
+  // 3. Pediatrician
   {
     _id: "doc_pedia_f",
     name: "Dr. Aisha Khan",
@@ -86,11 +95,25 @@ const MOCK_DOCTORS = [
     specialization: "Pediatrician",
     experienceYears: 7,
     fee: 600,
-    rating: "4.9",
+    rating: "4.7",
+    reviews: 187,
     availability: "Mon - Fri",
+    avatar: "https://images.unsplash.com/photo-1651008376811-b90baee60c1f?auto=format&fit=crop&q=80&w=400"
+  },
+  {
+    _id: "doc_pedia_m",
+    name: "Dr. Rahul Verma",
+    gender: "Male",
+    specialization: "Pediatrician",
+    experienceYears: 9,
+    fee: 650,
+    rating: "4.8",
+    reviews: 204,
+    availability: "Mon - Sat",
+    avatar: "https://images.unsplash.com/photo-1582750433449-648ed127bb54?auto=format&fit=crop&q=80&w=400"
   },
 
-  // Orthopedic Surgeon
+  // 4. Orthopedic Surgeon
   {
     _id: "doc_ortho_m",
     name: "Dr. Rohan Desai",
@@ -99,7 +122,9 @@ const MOCK_DOCTORS = [
     experienceYears: 15,
     fee: 1100,
     rating: "4.9",
+    reviews: 210,
     availability: "Mon, Thu, Sat",
+    avatar: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=400"
   },
   {
     _id: "doc_ortho_f",
@@ -109,10 +134,12 @@ const MOCK_DOCTORS = [
     experienceYears: 12,
     fee: 1100,
     rating: "4.8",
+    reviews: 175,
     availability: "Tue, Wed, Fri",
+    avatar: "https://images.unsplash.com/photo-1594824813566-82823d294647?auto=format&fit=crop&q=80&w=400"
   },
 
-  // Psychiatrist
+  // 5. Psychiatrist
   {
     _id: "doc_psych_m",
     name: "Dr. Karthik Nair",
@@ -121,7 +148,9 @@ const MOCK_DOCTORS = [
     experienceYears: 11,
     fee: 800,
     rating: "4.8",
+    reviews: 164,
     availability: "Mon - Fri",
+    avatar: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&q=80&w=400"
   },
   {
     _id: "doc_psych_f",
@@ -131,10 +160,12 @@ const MOCK_DOCTORS = [
     experienceYears: 9,
     fee: 800,
     rating: "4.9",
+    reviews: 220,
     availability: "Tue, Thu, Sat",
+    avatar: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=400"
   },
 
-  // Dermatologist
+  // 6. Dermatologist
   {
     _id: "doc_derma_m",
     name: "Dr. Devansh Saxena",
@@ -143,20 +174,24 @@ const MOCK_DOCTORS = [
     experienceYears: 8,
     fee: 700,
     rating: "4.7",
+    reviews: 142,
     availability: "Mon - Sat",
+    avatar: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=400"
   },
   {
     _id: "doc_derma_f",
-    name: "Dr. Nandini Kulkarni",
+    name: "Dr. Riya Kapoor",
     gender: "Female",
     specialization: "Dermatologist",
     experienceYears: 10,
-    fee: 700,
+    fee: 750,
     rating: "4.9",
-    availability: "Mon - Fri",
+    reviews: 198,
+    availability: "Mon, Wed, Sat",
+    avatar: "https://images.unsplash.com/photo-1594824813566-82823d294647?auto=format&fit=crop&q=80&w=400"
   },
 
-  // Neurologist
+  // 7. Neurologist
   {
     _id: "doc_neuro_m",
     name: "Dr. Suresh Gupta",
@@ -165,7 +200,9 @@ const MOCK_DOCTORS = [
     experienceYears: 16,
     fee: 1200,
     rating: "4.9",
+    reviews: 289,
     availability: "Mon, Wed, Sat",
+    avatar: "https://images.unsplash.com/photo-1582750433449-648ed127bb54?auto=format&fit=crop&q=80&w=400"
   },
   {
     _id: "doc_neuro_f",
@@ -175,10 +212,12 @@ const MOCK_DOCTORS = [
     experienceYears: 13,
     fee: 1200,
     rating: "4.8",
+    reviews: 195,
     availability: "Tue, Thu, Fri",
+    avatar: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=400"
   },
 
-  // Pulmonologist
+  // 8. Pulmonologist
   {
     _id: "doc_pulmo_m",
     name: "Dr. Vikrant Mehta",
@@ -187,172 +226,204 @@ const MOCK_DOCTORS = [
     experienceYears: 12,
     fee: 900,
     rating: "4.8",
+    reviews: 168,
     availability: "Mon, Wed, Fri",
+    avatar: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=400"
   },
   {
     _id: "doc_pulmo_f",
-    name: "Dr. Ritu Kapoor",
+    name: "Dr. Shalini Singh",
     gender: "Female",
     specialization: "Pulmonologist",
     experienceYears: 10,
-    fee: 900,
-    rating: "4.9",
+    fee: 850,
+    rating: "4.7",
+    reviews: 130,
     availability: "Tue, Thu, Sat",
+    avatar: "https://images.unsplash.com/photo-1651008376811-b90baee60c1f?auto=format&fit=crop&q=80&w=400"
   },
 
-  // Gynecologist
+  // 9. Gynecologist
   {
-    _id: "doc_gyna_m",
-    name: "Dr. Sameer Joshi",
-    gender: "Male",
-    specialization: "Gynecologist",
-    experienceYears: 14,
-    fee: 850,
-    rating: "4.8",
-    availability: "Mon - Sat",
-  },
-  {
-    _id: "doc_gyna_f",
-    name: "Dr. Sunita Rao",
+    _id: "doc_gynaec_f1",
+    name: "Dr. Ananya Rungta",
     gender: "Female",
     specialization: "Gynecologist",
-    experienceYears: 15,
-    fee: 850,
-    rating: "5.0",
+    experienceYears: 10,
+    fee: 700,
+    rating: "4.9",
+    reviews: 240,
     availability: "Mon - Sat",
+    avatar: "https://images.unsplash.com/photo-1594824813566-82823d294647?auto=format&fit=crop&q=80&w=400"
+  },
+  {
+    _id: "doc_gynaec_f2",
+    name: "Dr. Sunita Patil",
+    gender: "Female",
+    specialization: "Gynecologist",
+    experienceYears: 14,
+    fee: 800,
+    rating: "4.8",
+    reviews: 215,
+    availability: "Mon - Fri",
+    avatar: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=400"
   },
 
-  // ENT Specialist
+  // 10. ENT Specialist
   {
     _id: "doc_ent_m",
     name: "Dr. Alok Verma",
     gender: "Male",
     specialization: "ENT Specialist",
     experienceYears: 9,
-    fee: 650,
+    fee: 600,
     rating: "4.7",
-    availability: "Mon, Wed, Sat",
+    reviews: 150,
+    availability: "Mon - Fri",
+    avatar: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&q=80&w=400"
   },
   {
     _id: "doc_ent_f",
-    name: "Dr. Pooja Malhotra",
+    name: "Dr. Pooja Hegde",
     gender: "Female",
     specialization: "ENT Specialist",
     experienceYears: 11,
     fee: 650,
     rating: "4.8",
-    availability: "Tue, Thu, Fri",
+    reviews: 182,
+    availability: "Tue, Thu, Sat",
+    avatar: "https://images.unsplash.com/photo-1651008376811-b90baee60c1f?auto=format&fit=crop&q=80&w=400"
   },
 
-  // Ophthalmologist
+  // 11. Ophthalmologist
   {
-    _id: "doc_optha_m",
-    name: "Dr. Rahul Fernandez",
+    _id: "doc_ophthal_m",
+    name: "Dr. Sameer Joshi",
     gender: "Male",
     specialization: "Ophthalmologist",
-    experienceYears: 13,
-    fee: 750,
+    experienceYears: 12,
+    fee: 650,
     rating: "4.9",
-    availability: "Mon - Sat",
+    reviews: 280,
+    availability: "Tue, Thu, Sat",
+    avatar: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=400"
   },
   {
-    _id: "doc_optha_f",
-    name: "Dr. Anjali Das",
+    _id: "doc_ophthal_f",
+    name: "Dr. Nidhi Bansal",
     gender: "Female",
     specialization: "Ophthalmologist",
     experienceYears: 8,
-    fee: 750,
+    fee: 600,
     rating: "4.8",
-    availability: "Mon - Fri",
+    reviews: 160,
+    availability: "Mon - Sat",
+    avatar: "https://images.unsplash.com/photo-1594824813566-82823d294647?auto=format&fit=crop&q=80&w=400"
   },
 
-  // Gastroenterologist
+  // 12. Gastroenterologist
   {
     _id: "doc_gastro_m",
-    name: "Dr. Faisal Ahmed",
+    name: "Dr. Amit Bhatia",
     gender: "Male",
     specialization: "Gastroenterologist",
-    experienceYears: 15,
-    fee: 1100,
+    experienceYears: 13,
+    fee: 1000,
     rating: "4.9",
-    availability: "Mon, Thu, Sat",
+    reviews: 205,
+    availability: "Mon, Wed, Fri",
+    avatar: "https://images.unsplash.com/photo-1582750433449-648ed127bb54?auto=format&fit=crop&q=80&w=400"
   },
   {
     _id: "doc_gastro_f",
-    name: "Dr. Deepa Singhania",
+    name: "Dr. Neeta Agarwal",
     gender: "Female",
     specialization: "Gastroenterologist",
-    experienceYears: 12,
+    experienceYears: 15,
+    fee: 1050,
+    rating: "4.8",
+    reviews: 230,
+    availability: "Tue, Thu, Sat",
+    avatar: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=400"
+  },
+
+  // 13. Urologist
+  {
+    _id: "doc_uro_m1",
+    name: "Dr. Rajiv Singhal",
+    gender: "Male",
+    specialization: "Urologist",
+    experienceYears: 15,
     fee: 1100,
     rating: "4.8",
-    availability: "Tue, Wed, Fri",
+    reviews: 175,
+    availability: "Mon, Thu, Sat",
+    avatar: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=400"
   },
-
-  // Urologist
   {
-    _id: "doc_uro_m",
-    name: "Dr. Tarun Bhatia",
+    _id: "doc_uro_m2",
+    name: "Dr. Varun Malhotra",
     gender: "Male",
     specialization: "Urologist",
-    experienceYears: 14,
+    experienceYears: 11,
     fee: 1000,
-    rating: "4.8",
+    rating: "4.7",
+    reviews: 140,
     availability: "Mon, Wed, Fri",
+    avatar: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&q=80&w=400"
   },
+
+  // 14. Endocrinologist
   {
-    _id: "doc_uro_f",
+    _id: "doc_endo_f",
     name: "Dr. Neha Agarwal",
     gender: "Female",
-    specialization: "Urologist",
-    experienceYears: 10,
-    fee: 1000,
-    rating: "4.9",
-    availability: "Tue, Thu, Sat",
-  },
-
-  // Endocrinologist
-  {
-    _id: "doc_endo_m",
-    name: "Dr. Siddharth Roy",
-    gender: "Male",
     specialization: "Endocrinologist",
     experienceYears: 11,
     fee: 950,
-    rating: "4.8",
+    rating: "4.9",
+    reviews: 210,
     availability: "Mon - Sat",
+    avatar: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=400"
   },
   {
-    _id: "doc_endo_f",
-    name: "Dr. Shalini Mishra",
-    gender: "Female",
+    _id: "doc_endo_m",
+    name: "Dr. Kunal Shah",
+    gender: "Male",
     specialization: "Endocrinologist",
-    experienceYears: 13,
-    fee: 950,
-    rating: "4.9",
-    availability: "Mon - Fri",
+    experienceYears: 14,
+    fee: 900,
+    rating: "4.8",
+    reviews: 188,
+    availability: "Tue, Thu, Sat",
+    avatar: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=400"
   },
 
-  // Oncologist
+  // 15. Oncologist
   {
     _id: "doc_onco_m",
-    name: "Dr. Arvind Swamy",
+    name: "Dr. Sandeep Roy",
     gender: "Male",
     specialization: "Oncologist",
     experienceYears: 18,
     fee: 1500,
     rating: "5.0",
+    reviews: 340,
     availability: "Mon, Wed, Fri",
+    avatar: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&q=80&w=400"
   },
   {
     _id: "doc_onco_f",
-    name: "Dr. Rashmi Menon",
+    name: "Dr. Tanvi Deshmukh",
     gender: "Female",
     specialization: "Oncologist",
-    experienceYears: 15,
-    fee: 1500,
+    experienceYears: 16,
+    fee: 1400,
     rating: "4.9",
+    reviews: 290,
     availability: "Tue, Thu, Sat",
-  },
+    avatar: "https://images.unsplash.com/photo-1594824813566-82823d294647?auto=format&fit=crop&q=80&w=400"
+  }
 ];
 
 const TIME_SLOTS = [
@@ -363,26 +434,20 @@ const TIME_SLOTS = [
   "06:00 PM",
 ];
 
-const convertTo24Hour = (timeStr) => {
-  if (!timeStr) return "";
-  const match = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
-  if (!match) return timeStr;
-  let [, hours, minutes, modifier] = match;
-  let h = parseInt(hours, 10);
-  if (modifier) {
-    modifier = modifier.toUpperCase();
-    if (modifier === "PM" && h < 12) h += 12;
-    if (modifier === "AM" && h === 12) h = 0;
-  }
-  return `${String(h).padStart(2, "0")}:${minutes}`;
+const getDoctorAvatar = (doc) => {
+  if (doc.avatar) return doc.avatar;
+  const isFemale = doc.gender === "Female";
+  return isFemale
+    ? "https://images.unsplash.com/photo-1594824813566-82823d294647?auto=format&fit=crop&q=80&w=400"
+    : "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=400";
 };
 
 const Doctors = () => {
+  const navigate = useNavigate();
   const [doctors, setDoctors] = useState(MOCK_DOCTORS);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSpecialty, setSelectedSpecialty] = useState("All");
 
-  // Booking Modal State
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [bookingDate, setBookingDate] = useState("");
   const [selectedSlot, setSelectedSlot] = useState("");
@@ -406,11 +471,10 @@ const Doctors = () => {
         apiDocs = response.data.doctors;
       }
 
-      // Merge API doctors with MOCK_DOCTORS ensuring complete coverage
       const combined = [...MOCK_DOCTORS];
       apiDocs.forEach((apiDoc) => {
         const exists = combined.some(
-          (d) => d._id === apiDoc._id || d.name.toLowerCase() === apiDoc.name?.toLowerCase()
+          (d) => d._id === apiDoc._id || d.name?.toLowerCase() === apiDoc.name?.toLowerCase()
         );
         if (!exists) {
           combined.push(apiDoc);
@@ -418,7 +482,6 @@ const Doctors = () => {
       });
       setDoctors(combined);
     } catch (err) {
-      console.warn("Using full mock doctors dataset:", err.message);
       setDoctors(MOCK_DOCTORS);
     }
   };
@@ -461,132 +524,228 @@ const Doctors = () => {
     setBookingLoading(true);
     setErrorMessage("");
 
-    const formattedTimeSlot = convertTo24Hour(selectedSlot);
+    const spec = selectedDoctor.specialization || selectedDoctor.specialty || "General Physician";
+    const avatarImg = getDoctorAvatar(selectedDoctor);
 
     const payload = {
       doctorId: selectedDoctor._id,
+      doctor: selectedDoctor.name,
       doctorName: selectedDoctor.name,
-      specialty: selectedDoctor.specialization || selectedDoctor.specialty,
-      specialization: selectedDoctor.specialization || selectedDoctor.specialty,
+      specialty: spec,
+      specialization: spec,
+      doctorProfileImage: avatarImg,
       date: bookingDate,
-      timeSlot: formattedTimeSlot,
-      symptoms: symptoms,
-      reason: symptoms,
+      timeSlot: selectedSlot,
+      slot: selectedSlot,
+      symptoms: symptoms || "Routine Checkup",
+      reason: symptoms || "Routine Checkup",
       mode: bookingMode,
+      consultationMode: bookingMode,
       status: "pending",
     };
 
     try {
-      await API.post("/appointments", payload);
-      setSuccessMessage("✅ Appointment booked successfully!");
-      setTimeout(() => {
-        handleCloseModal();
-      }, 1500);
-    } catch (err) {
       try {
         await API.post("/appointments/book", payload);
-        setSuccessMessage("✅ Appointment booked successfully!");
-        setTimeout(() => {
-          handleCloseModal();
-        }, 1500);
-      } catch (secondErr) {
-        setErrorMessage(
-          secondErr.response?.data?.message || err.response?.data?.message || "Failed to book appointment."
-        );
+      } catch {
+        await API.post("/appointments", payload);
       }
+
+      // Persist in localStorage so Appointments page displays it instantly
+      try {
+        const saved = localStorage.getItem("patient_appointments");
+        let list = saved ? JSON.parse(saved) : [];
+        const newAppt = {
+          _id: `appt_${Date.now()}`,
+          id: `appt_${Date.now()}`,
+          doctorName: selectedDoctor.name,
+          specialty: spec,
+          doctorProfileImage: avatarImg,
+          date: bookingDate,
+          timeSlot: selectedSlot,
+          mode: bookingMode,
+          status: "pending",
+          symptoms: symptoms || "Routine Checkup",
+        };
+        list = [newAppt, ...list];
+        localStorage.setItem("patient_appointments", JSON.stringify(list));
+      } catch (storageErr) {
+        console.warn("Storage update failed:", storageErr);
+      }
+
+      setSuccessMessage(`Appointment booked with ${selectedDoctor.name} successfully!`);
+      setTimeout(() => {
+        handleCloseModal();
+        navigate("/patient/appointments");
+      }, 1200);
+    } catch (err) {
+      setErrorMessage(
+        err.response?.data?.message || "Failed to book appointment. Please try again."
+      );
     } finally {
       setBookingLoading(false);
     }
   };
 
   return (
-    <div className="doctors-container">
-      <div className="doctors-header">
-        <h1>Find Healthcare Specialists</h1>
-        <p>Book online consultations or in-person visits with verified doctors across all specialties.</p>
+    <div style={{ padding: '24px 32px', backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: 'sans-serif' }}>
+      
+      {/* Header Banner */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, position: 'relative' }}>
+        <div>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
+            Find Healthcare Specialists 
+            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: '50%', backgroundColor: '#0284c7', color: '#fff', fontSize: 13, fontWeight: 'bold' }}>✓</span>
+          </h1>
+          <p style={{ color: '#64748b', fontSize: 14, marginTop: 4 }}>
+            Book online consultations or in-person visits with verified doctors across all specialties.
+          </p>
+        </div>
+
+        {/* Header Shield Logo */}
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <svg width="220" height="90" viewBox="0 0 220 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="0" y="5" width="220" height="80" rx="20" fill="#EBF8FF" />
+            <circle cx="110" cy="45" r="35" fill="#D2EEFC" opacity="0.6" />
+            <circle cx="70" cy="50" r="25" fill="#E0F2FE" opacity="0.8" />
+            <circle cx="150" cy="50" r="25" fill="#E0F2FE" opacity="0.8" />
+            <ellipse cx="110" cy="72" rx="75" ry="5" fill="#BAE6FD" opacity="0.7" />
+            <g transform="translate(85, 18)">
+              <path d="M 25 0 C 38 0, 50 5, 50 15 C 50 35, 38 50, 25 55 C 12 50, 0 35, 0 15 C 0 5, 12 0, 25 0 Z" fill="#0284C7" />
+              <rect x="21" y="15" width="8" height="24" rx="2" fill="white" />
+              <rect x="13" y="23" width="24" height="8" rx="2" fill="white" />
+            </g>
+          </svg>
+        </div>
       </div>
 
-      <div className="controls-section">
-        <div className="search-box-wrapper">
-          <span className="search-icon">🔍</span>
+      {/* Search and Location Filter Bar */}
+      <div style={{ display: 'flex', gap: 16, marginBottom: 20 }}>
+        <div style={{ flex: 2, position: 'relative' }}>
+          <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: 16 }}>🔍</span>
           <input
             type="text"
-            className="search-input"
             placeholder="Search by Doctor Name or Specialty..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              width: '100%', padding: '12px 16px 12px 46px', borderRadius: 12,
+              border: '1px solid #e2e8f0', backgroundColor: '#fff', fontSize: 14, outline: 'none',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+            }}
           />
         </div>
 
-        {/* Filter Pills */}
-        <div className="filter-pills" style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-          {SPECIALTIES.map((spec, index) => (
-            <button
-              key={index}
-              className={`pill-btn ${selectedSpecialty === spec ? "active" : ""}`}
-              onClick={() => setSelectedSpecialty(spec)}
-            >
-              {spec}
-            </button>
-          ))}
+        <div style={{ flex: 1, position: 'relative' }}>
+          <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: 16 }}>📍</span>
+          <select
+            style={{
+              width: '100%', padding: '12px 36px 12px 46px', borderRadius: 12,
+              border: '1px solid #e2e8f0', backgroundColor: '#fff', fontSize: 14, color: '#475569',
+              appearance: 'none', cursor: 'pointer', outline: 'none', boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+            }}
+          >
+            <option>Select Location</option>
+            <option>Delhi NCR</option>
+            <option>Mumbai</option>
+            <option>Bangalore</option>
+          </select>
+          <span style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none', fontSize: 12 }}>▼</span>
         </div>
       </div>
 
-      {/* Grid */}
-      <div className="doctors-grid">
+      {/* Specialty Filter Pills */}
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 28 }}>
+        {SPECIALTIES.map((spec, index) => (
+          <button
+            key={index}
+            onClick={() => setSelectedSpecialty(spec)}
+            style={{
+              padding: '8px 18px', borderRadius: 20, fontSize: 13, fontWeight: 500,
+              border: '1px solid', cursor: 'pointer', transition: 'all 0.2s',
+              backgroundColor: selectedSpecialty === spec ? '#008394' : '#fff',
+              color: selectedSpecialty === spec ? '#fff' : '#475569',
+              borderColor: selectedSpecialty === spec ? '#008394' : '#e2e8f0'
+            }}
+          >
+            {spec}
+          </button>
+        ))}
+      </div>
+
+      {/* Doctors Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 24 }}>
         {filteredDoctors.length > 0 ? (
           filteredDoctors.map((doc) => (
-            <div key={doc._id} className="doctor-card">
-              <div>
-                <div className="doctor-info-header">
-                  <div 
-                    className="doctor-avatar" 
-                    style={{
-                      backgroundColor: doc.gender === "Female" ? "#fbcfe8" : "#bae6fd",
-                      color: doc.gender === "Female" ? "#9d174d" : "#0369a1"
+            <div
+              key={doc._id}
+              style={{
+                backgroundColor: '#fff', borderRadius: 16, padding: 20,
+                border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'relative'
+              }}
+            >
+              <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+                <div style={{
+                  width: 84, height: 84, borderRadius: '50%',
+                  backgroundColor: doc.gender === 'Female' ? '#fce7f3' : '#e0f2fe',
+                  overflow: 'hidden', flexShrink: 0
+                }}>
+                  <img
+                    src={getDoctorAvatar(doc)}
+                    alt={doc.name}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(doc.name)}&background=0D8ABC&color=fff&bold=true`;
                     }}
-                  >
-                    {doc.name.replace("Dr. ", "").charAt(0)}
-                  </div>
-                  <div className="doctor-details">
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <h3>{doc.name}</h3>
-                      {doc.gender && (
-                        <span 
-                          style={{ 
-                            fontSize: "10px", 
-                            padding: "2px 6px", 
-                            borderRadius: "10px", 
-                            backgroundColor: doc.gender === "Female" ? "#fce7f3" : "#e0f2fe", 
-                            color: doc.gender === "Female" ? "#be185d" : "#0284c7" 
-                          }}
-                        >
-                          {doc.gender}
-                        </span>
-                      )}
-                    </div>
-                    <span className="specialty-badge">
-                      {doc.specialization || doc.specialty}
-                    </span>
-                  </div>
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
                 </div>
 
-                <div className="doctor-meta">
-                  <div className="meta-item">
-                    <span>Experience: </span>
-                    <strong>{doc.experienceYears || 5}+ yrs</strong>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: 0 }}>{doc.name}</h3>
+                    {doc.gender && (
+                      <span style={{
+                        fontSize: 11, padding: '2px 8px', borderRadius: 12, fontWeight: 500,
+                        backgroundColor: doc.gender === 'Female' ? '#fce7f3' : '#e0f2fe',
+                        color: doc.gender === 'Female' ? '#db2777' : '#0284c7'
+                      }}>
+                        {doc.gender}
+                      </span>
+                    )}
                   </div>
-                  <div className="meta-item">
-                    <span>Consultation: </span>
-                    <strong>₹{doc.fee || 500}</strong>
+                  <p style={{ color: '#0284c7', fontSize: 13, fontWeight: 500, margin: '4px 0 10px 0' }}>
+                    {doc.specialization || doc.specialty}
+                  </p>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, color: '#64748b' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span>🏅</span>
+                      <span><b>{doc.experienceYears || 5}+ yrs</b> Experience</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span>💳</span>
+                      <span><b>₹{doc.fee || 500}</b> Consultation</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="card-actions">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 14, borderTop: '1px solid #f1f5f9' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ color: '#f59e0b', fontSize: 14 }}>★</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>{doc.rating || "4.8"}</span>
+                  <span style={{ fontSize: 12, color: '#94a3b8' }}>({doc.reviews || 220} reviews)</span>
+                </div>
+
                 <button
-                  className="btn-book"
                   onClick={() => handleOpenBooking(doc)}
+                  style={{
+                    backgroundColor: '#007791', color: '#fff', border: 'none', padding: '9px 16px',
+                    borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 6, transition: 'background-color 0.2s'
+                  }}
                 >
                   📅 Book Appointment
                 </button>
@@ -594,7 +753,7 @@ const Doctors = () => {
             </div>
           ))
         ) : (
-          <p style={{ gridColumn: "1 / -1", color: "#6b7280", marginTop: "1rem" }}>
+          <p style={{ gridColumn: '1 / -1', color: '#6b7280', marginTop: '1rem', textAlign: 'center' }}>
             No doctors found matching your criteria.
           </p>
         )}
@@ -602,70 +761,81 @@ const Doctors = () => {
 
       {/* Booking Modal */}
       {selectedDoctor && (
-        <div className="modal-overlay">
-          <div className="booking-modal">
-            <div className="modal-header">
-              <h2>Book Appointment</h2>
-              <button className="btn-close" onClick={handleCloseModal}>
-                ✕
-              </button>
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 16
+        }}>
+          <div style={{
+            backgroundColor: '#fff', borderRadius: 20, width: '100%', maxWidth: 480,
+            padding: 24, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', position: 'relative'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0, color: '#0f172a' }}>Book Appointment</h2>
+              <button onClick={handleCloseModal} style={{ border: 'none', background: 'none', fontSize: 20, cursor: 'pointer', color: '#64748b' }}>✕</button>
             </div>
 
             {successMessage && (
-              <div className="alert-success">{successMessage}</div>
+              <div style={{ padding: '12px 16px', backgroundColor: '#dcfce7', color: '#166534', borderRadius: 10, fontSize: 14, marginBottom: 16 }}>
+                {successMessage}
+              </div>
             )}
 
             {errorMessage && (
-              <div style={{ color: "#dc2626", fontSize: "0.875rem", marginBottom: "1rem" }}>
+              <div style={{ padding: '12px 16px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: 10, fontSize: 14, marginBottom: 16 }}>
                 ⚠️ {errorMessage}
               </div>
             )}
 
             <form onSubmit={handleBookAppointment}>
-              <div className="form-group">
-                <label>Doctor</label>
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 6 }}>Doctor</label>
                 <input
                   type="text"
-                  className="form-input"
                   value={`${selectedDoctor.name} (${selectedDoctor.specialization || selectedDoctor.specialty})`}
                   disabled
-                  style={{ backgroundColor: "#f9fafb" }}
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', fontSize: 14 }}
                 />
               </div>
 
-              <div className="form-group">
-                <label>Consultation Mode</label>
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 6 }}>Consultation Mode</label>
                 <select
-                  className="form-input"
                   value={bookingMode}
                   onChange={(e) => setBookingMode(e.target.value)}
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 14, outline: 'none' }}
                 >
                   <option value="video">📹 Video Call</option>
-                  <option value="in-person">🏥 In-Person Visit</option>
+                  <option value="inperson">🏥 In-Person Visit</option>
                 </select>
               </div>
 
-              <div className="form-group">
-                <label>Select Date</label>
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 6 }}>Select Date</label>
                 <input
                   type="date"
-                  className="form-input"
                   min={new Date().toISOString().split("T")[0]}
                   value={bookingDate}
                   onChange={(e) => setBookingDate(e.target.value)}
                   required
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 14, outline: 'none' }}
                 />
               </div>
 
-              <div className="form-group">
-                <label>Select Time Slot</label>
-                <div className="time-slots">
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 6 }}>Select Time Slot</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   {TIME_SLOTS.map((slot, idx) => (
                     <button
                       key={idx}
                       type="button"
-                      className={`slot-btn ${selectedSlot === slot ? "selected" : ""}`}
                       onClick={() => setSelectedSlot(slot)}
+                      style={{
+                        padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 500, border: '1px solid', cursor: 'pointer',
+                        backgroundColor: selectedSlot === slot ? '#007791' : '#fff',
+                        color: selectedSlot === slot ? '#fff' : '#475569',
+                        borderColor: selectedSlot === slot ? '#007791' : '#cbd5e1'
+                      }}
                     >
                       {slot}
                     </button>
@@ -673,30 +843,30 @@ const Doctors = () => {
                 </div>
               </div>
 
-              <div className="form-group">
-                <label>Reason / Symptoms (Optional)</label>
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 6 }}>Reason / Symptoms (Optional)</label>
                 <input
                   type="text"
-                  className="form-input"
-                  placeholder="e.g. High BP follow up, Headache..."
+                  placeholder="e.g. High Fever, Headache..."
                   value={symptoms}
                   onChange={(e) => setSymptoms(e.target.value)}
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 14, outline: 'none' }}
                 />
               </div>
 
-              <div className="modal-actions">
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
                 <button
                   type="button"
-                  className="btn-cancel"
                   onClick={handleCloseModal}
                   disabled={bookingLoading}
+                  style={{ padding: '10px 18px', borderRadius: 8, border: '1px solid #cbd5e1', backgroundColor: '#fff', color: '#475569', fontSize: 14, cursor: 'pointer' }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="btn-confirm"
                   disabled={bookingLoading}
+                  style={{ padding: '10px 18px', borderRadius: 8, border: 'none', backgroundColor: '#007791', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
                 >
                   {bookingLoading ? "Booking..." : "Confirm Booking"}
                 </button>

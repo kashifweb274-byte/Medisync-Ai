@@ -26,7 +26,7 @@ const STATUS_TONE = {
 
 const TABS = [
   { key: 'upcoming', label: 'Upcoming', statuses: ['confirmed', 'pending'] },
-  { key: 'completed', label: 'Completed', statuses: ['completed', 'cancelled'] },
+  { key: 'completed', label: 'History / Completed', statuses: ['completed', 'cancelled'] },
 ]
 
 export default function DoctorAppointments() {
@@ -51,7 +51,8 @@ export default function DoctorAppointments() {
     })
   }
 
-  const getPatientName = (appt) => appt.patientId?.name || appt.patientName || 'Patient'
+  const getPatientName = (appt) => 
+    appt.patientId?.name || appt.patientName || appt.patient?.name || 'Patient'
 
   const fetchAppointments = async () => {
     try {
@@ -68,31 +69,50 @@ export default function DoctorAppointments() {
   }
 
   const handleUpdateStatus = async (id, nextStatus) => {
-    if (nextStatus === 'cancelled' && !window.confirm('Are you sure you want to cancel this appointment?')) {
+    const normalizedStatus = String(nextStatus).toLowerCase()
+
+    if (normalizedStatus === 'cancelled' && !window.confirm('Are you sure you want to cancel this appointment?')) {
       return
     }
 
     setActionLoading(id)
     try {
+      let isSuccess = false
+
+      // 1. Direct status update route (PATCH / PUT)
       try {
-        await API.patch(`/appointments/${id}/status`, { status: nextStatus })
+        await API.patch(`/appointments/${id}/status`, { status: normalizedStatus })
+        isSuccess = true
       } catch {
-        await API.patch(`/appointments/${id}/${nextStatus}`)
+        try {
+          await API.put(`/appointments/${id}/status`, { status: normalizedStatus })
+          isSuccess = true
+        } catch {
+          // 2. Direct cancel/action route fallback
+          await API.put(`/appointments/${id}/${normalizedStatus}`)
+          isSuccess = true
+        }
       }
 
-      setAppointments((prev) =>
-        prev.map((a) => {
-          const currentId = a._id || a.id
-          return currentId === id ? { ...a, status: nextStatus } : a
-        })
-      )
+      if (isSuccess) {
+        // Instant Optimistic State Update
+        setAppointments((prev) =>
+          prev.map((a) => {
+            const currentId = a._id || a.id
+            return currentId === id ? { ...a, status: normalizedStatus } : a
+          })
+        )
 
-      const statusMessages = {
-        confirmed: 'Appointment confirmed successfully',
-        cancelled: 'Appointment cancelled successfully',
-        completed: 'Appointment marked as completed',
+        const statusMessages = {
+          confirmed: 'Appointment confirmed successfully',
+          cancelled: 'Appointment cancelled successfully',
+          completed: 'Appointment marked as completed',
+        }
+        toast(statusMessages[normalizedStatus] || 'Status updated', 'success')
+
+        // Sync with backend
+        await fetchAppointments()
       }
-      toast(statusMessages[nextStatus] || 'Status updated', 'success')
     } catch (err) {
       console.error('Status update error:', err)
       toast(err.response?.data?.message || 'Failed to update appointment status', 'danger')
@@ -105,9 +125,11 @@ export default function DoctorAppointments() {
     fetchAppointments()
   }, [])
 
+  // Case-insensitive Tab Filtering
   const filteredAppointments = appointments.filter((a) => {
     const tabConfig = TABS.find((t) => t.key === tab)
-    return tabConfig?.statuses.includes(a.status)
+    const currentStatus = String(a.status || '').toLowerCase()
+    return tabConfig?.statuses.includes(currentStatus)
   })
 
   if (loading) {
@@ -144,18 +166,23 @@ export default function DoctorAppointments() {
       </div>
 
       <div className="tabs" style={{ marginBottom: 18 }}>
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            className={tab === t.key ? 'active' : ''}
-            onClick={() => setTab(t.key)}
-          >
-            {t.label}
-            <span className="badge" style={{ marginLeft: 6 }}>
-              {appointments.filter((a) => t.statuses.includes(a.status)).length}
-            </span>
-          </button>
-        ))}
+        {TABS.map((t) => {
+          const count = appointments.filter((a) => 
+            t.statuses.includes(String(a.status || '').toLowerCase())
+          ).length
+          return (
+            <button
+              key={t.key}
+              className={tab === t.key ? 'active' : ''}
+              onClick={() => setTab(t.key)}
+            >
+              {t.label}
+              <span className="badge" style={{ marginLeft: 6 }}>
+                {count}
+              </span>
+            </button>
+          )
+        })}
       </div>
 
       {filteredAppointments.length === 0 ? (
@@ -176,8 +203,9 @@ export default function DoctorAppointments() {
             const apptId = a._id || a.id
             const patientName = getPatientName(a)
             const dateObj = getParsedDate(a.date)
-            const isPending = a.status === 'pending'
-            const isConfirmed = a.status === 'confirmed'
+            const statusLower = String(a.status || '').toLowerCase()
+            const isPending = statusLower === 'pending'
+            const isConfirmed = statusLower === 'confirmed'
             const isActionable = isPending || isConfirmed
             const isLoadingThis = actionLoading === apptId
 
@@ -197,10 +225,10 @@ export default function DoctorAppointments() {
                       <div>
                         <h4 style={{ fontSize: 15, marginBottom: 2 }}>{patientName}</h4>
                         <span className="small" style={{ color: 'var(--gray-500)' }}>
-                          {a.patientId?.email || 'Patient consultation'}
+                          {a.patientId?.email || a.patientEmail || 'Patient consultation'}
                         </span>
                       </div>
-                      <Badge tone={STATUS_TONE[a.status] || 'gray'}>{a.status}</Badge>
+                      <Badge tone={STATUS_TONE[statusLower] || 'gray'}>{statusLower}</Badge>
                     </div>
 
                     <div className="appt-line" style={{ marginTop: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -226,7 +254,7 @@ export default function DoctorAppointments() {
                       <Loader2 size={18} className="animate-spin" />
                     ) : (
                       <>
-                        {/* Confirm Action for Pending */}
+                        {/* Accept Button for Pending */}
                         {isPending && (
                           <button
                             className="btn btn-success btn-sm"
@@ -236,7 +264,7 @@ export default function DoctorAppointments() {
                           </button>
                         )}
 
-                        {/* Complete & Video Join Actions for Confirmed */}
+                        {/* Complete & Call Actions for Confirmed */}
                         {isConfirmed && (
                           <>
                             {a.mode === 'video' && (
@@ -253,7 +281,7 @@ export default function DoctorAppointments() {
                           </>
                         )}
 
-                        {/* Cancel Action */}
+                        {/* Cancel Button */}
                         {isActionable && (
                           <button
                             className="btn btn-danger btn-sm"

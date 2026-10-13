@@ -2,16 +2,24 @@ const mongoose = require("mongoose");
 
 const appointmentSchema = new mongoose.Schema(
   {
-    patientId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    // Mixed type allows both valid MongoDB ObjectIds and demo strings like "demo1"
+    patientId: { 
+      type: mongoose.Schema.Types.Mixed, 
+      ref: "User", 
+      required: true 
+    },
 
-    // New appointments always store the Doctor profile _id. doctorModel keeps
-    // the reference explicit, while the controller still reads legacy rows that
-    // stored a User _id before this field existed.
-    doctorId: { type: mongoose.Schema.Types.ObjectId, required: true, refPath: "doctorModel" },
-    doctorModel: { type: String, enum: ["Doctor", "User"], default: "Doctor", required: true },
+    doctorId: { 
+      type: mongoose.Schema.Types.Mixed, 
+      required: true, 
+      refPath: "doctorModel" 
+    },
+    doctorModel: { 
+      type: String, 
+      enum: ["Doctor", "User"], 
+      default: "Doctor" 
+    },
 
-    // Snapshots make an appointment readable even if a linked profile changes
-    // or an old record contains a legacy User id.
     doctorName: { type: String, trim: true, default: "" },
     specialty: { type: String, trim: true, default: "" },
     doctorProfileImage: { type: String, trim: true, default: "" },

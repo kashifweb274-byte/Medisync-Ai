@@ -183,7 +183,7 @@ export default function Landing() {
         <div className="section-inner">
           <div className="section-title">
             <span className="section-eyebrow">Platform</span>
-            <h2>Five AI pillars, one coordinated care journey</h2>
+            <h2>Six AI pillars, one coordinated care journey</h2>
             <p>Everything a patient and a doctor need, powered by a scheduling, analysis and risk engine working together.</p>
           </div>
           <div className="feature-grid">

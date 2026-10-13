@@ -14,8 +14,10 @@
 .insights-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 32px;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
 .insights-title {
@@ -34,34 +36,72 @@
   font-weight: 500;
 }
 
+/* Header Action Buttons */
+.btn-primary {
+  background-color: #0284c7;
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(2, 132, 199, 0.2);
+}
+
+.btn-primary:hover {
+  background-color: #0369a1;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background-color: #ffffff;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
+}
+
 /* Header Risk Badge with Pulse Effect */
 .top-risk-badge {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: rgba(245, 158, 11, 0.12);
-  color: #d97706;
   font-size: 13px;
   font-weight: 700;
   padding: 8px 16px;
   border-radius: 9999px;
-  border: 1px solid rgba(245, 158, 11, 0.25);
   backdrop-filter: blur(8px);
+  border: 1px solid currentColor;
 }
 
 .badge-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: #f59e0b;
-  box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
   animation: pulse-ring 2s infinite;
 }
 
 @keyframes pulse-ring {
-  0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
-  70% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(2, 132, 199, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(2, 132, 199, 0); }
 }
 
 /* Grid Layout */
@@ -70,12 +110,6 @@
   grid-template-columns: 1.15fr 1fr;
   gap: 24px;
   margin-bottom: 32px;
-}
-
-@media (max-width: 900px) {
-  .insights-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 .left-column,
@@ -110,11 +144,10 @@
   margin-bottom: 20px;
 }
 
-/* Specific Card Customization */
+/* Dynamic Gauge Meter Section */
 .risk-card {
   position: relative;
   overflow: hidden;
-  border-left: 5px solid #f59e0b;
 }
 
 .risk-card-content {
@@ -123,7 +156,6 @@
   gap: 28px;
 }
 
-/* Gauge Meter Overlay */
 .gauge-container {
   position: relative;
   width: 140px;
@@ -132,11 +164,13 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
+  flex-shrink: 0;
 }
 
 .gauge-svg {
   width: 140px;
   height: 80px;
+  overflow: visible;
 }
 
 .gauge-text-overlay {
@@ -169,13 +203,10 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(245, 158, 11, 0.12);
-  color: #d97706;
   font-size: 12px;
   font-weight: 700;
   padding: 4px 12px;
   border-radius: 9999px;
-  border: 1px solid rgba(245, 158, 11, 0.2);
   margin-bottom: 12px;
 }
 
@@ -211,6 +242,7 @@
   font-weight: 600;
   color: #334155;
   transition: background-color 0.2s ease;
+  word-break: break-word;
 }
 
 .factor-box:hover {
@@ -235,11 +267,7 @@
 .vitals-empty-card {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 48px 24px;
-  text-align: center;
-  min-height: 220px;
+  justify-content: space-between;
 }
 
 .vital-icon-circle {
@@ -269,6 +297,16 @@
   line-height: 1.5;
 }
 
+/* Loading Animation */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* Footer Disclaimer */
 .insights-disclaimer {
   font-size: 12px;
@@ -276,4 +314,47 @@
   text-align: left;
   line-height: 1.5;
   margin-top: 24px;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 16px;
+}
+
+/* Responsive Breakdown */
+@media (max-width: 900px) {
+  .insights-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .insights-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .risk-card-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .gauge-container {
+    align-self: center;
+  }
+}
+
+/* Print View Formatting */
+@media print {
+  .btn-primary,
+  .btn-secondary,
+  .top-risk-badge {
+    display: none !important;
+  }
+
+  .insights-container {
+    padding: 0;
+    background: #fff;
+  }
+
+  .insight-card {
+    box-shadow: none;
+    border: 1px solid #cbd5e1;
+    break-inside: avoid;
+  }
 }

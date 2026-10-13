@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import API from "../../api";
 import "./Medications.css";
 
@@ -34,6 +34,9 @@ const Medications = () => {
     },
   ]);
 
+  // Ref to track already triggered alerts in the current minute (prevents duplicate popups)
+  const alertedMedsRef = useRef(new Set());
+
   // Tab Filter State ('all' | 'morning' | 'afternoon' | 'evening')
   const [activeSlot, setActiveSlot] = useState("all");
 
@@ -47,6 +50,15 @@ const Medications = () => {
   const [savingWhatsapp, setSavingWhatsapp] = useState(false);
   const [whatsappSuccess, setWhatsappSuccess] = useState("");
 
+  // Add Medication Modal & Form State
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newMed, setNewMed] = useState({
+    name: "",
+    dosage: "",
+    time: "09:00 AM",
+    timeSlot: "morning",
+  });
+
   useEffect(() => {
     // Check Web Push Support
     if ("Notification" in window) {
@@ -56,6 +68,66 @@ const Medications = () => {
       }
     }
   }, []);
+
+  // Direct WhatsApp Alert Dispatcher
+  const sendWhatsappAlert = (medName, dosage, time) => {
+    if (!phone) {
+      alert("Pehle top bar me 'WhatsApp Alerts' button par click karke number enter karein!");
+      setShowWhatsappModal(true);
+      return;
+    }
+
+    let cleanPhone = phone.replace(/[^0-9]/g, "");
+    if (cleanPhone.length === 10) cleanPhone = "91" + cleanPhone;
+
+    const message = 
+      `⏰ *MediSync Healthcare Alert*\n\n` +
+      `Hi! Aapke medicine lene ka time ho gaya hai:\n` +
+      `💊 *Medicine:* ${medName}\n` +
+      `📋 *Dosage:* ${dosage}\n` +
+      `⏰ *Time:* ${time}`;
+
+    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, "_blank");
+  };
+
+  // Auto-Checker Timer Effect (Background Schedule Monitor)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      // Format time as "09:00 AM" / "02:00 PM"
+      const currentTimeStr = now.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+
+      medications.forEach((med) => {
+        const alertKey = `${med.id}-${currentTimeStr}`;
+
+        // Conditions: Pending + WA Alert ON + Time Matches + Not Alerted in this minute yet
+        if (
+          med.status === "pending" &&
+          med.whatsappAlert &&
+          med.time.trim().toLowerCase() === currentTimeStr.trim().toLowerCase() &&
+          !alertedMedsRef.current.has(alertKey)
+        ) {
+          alertedMedsRef.current.add(alertKey);
+
+          // 1. Browser Push Alert (if granted)
+          if (Notification.permission === "granted") {
+            new Notification(`⏰ Medicine Time: ${med.name}`, {
+              body: `Dosage: ${med.dosage}`,
+            });
+          }
+
+          // 2. Self-Trigger WhatsApp Redirection
+          sendWhatsappAlert(med.name, med.dosage, med.time);
+        }
+      });
+    }, 10000); // 10-second interval check
+
+    return () => clearInterval(timer);
+  }, [medications, phone]);
 
   // Web Push Permission Request
   const handleEnablePush = async () => {
@@ -105,23 +177,38 @@ const Medications = () => {
     setWhatsappSuccess("");
 
     try {
-      // Backend API call to save phone & sync WhatsApp reminders
       await API.post("/user/notifications/whatsapp", { phone });
-      setWhatsappSuccess("WhatsApp notifications linked successfully!");
-      setTimeout(() => {
-        setShowWhatsappModal(false);
-        setWhatsappSuccess("");
-      }, 1500);
+      setWhatsappSuccess("WhatsApp number saved successfully!");
     } catch (err) {
       console.warn("WhatsApp setup API fallback:", err.message);
       setWhatsappSuccess("WhatsApp number saved locally!");
+    } finally {
+      setSavingWhatsapp(false);
       setTimeout(() => {
         setShowWhatsappModal(false);
         setWhatsappSuccess("");
       }, 1500);
-    } finally {
-      setSavingWhatsapp(false);
     }
+  };
+
+  // Add Medication Submit Handler
+  const handleAddMedicationSubmit = (e) => {
+    e.preventDefault();
+    if (!newMed.name.trim() || !newMed.dosage.trim()) return;
+
+    const newItem = {
+      id: Date.now().toString(),
+      name: newMed.name,
+      dosage: newMed.dosage,
+      time: newMed.time || "09:00 AM",
+      timeSlot: newMed.timeSlot || "morning",
+      status: "pending",
+      whatsappAlert: true,
+    };
+
+    setMedications((prev) => [newItem, ...prev]);
+    setNewMed({ name: "", dosage: "", time: "09:00 AM", timeSlot: "morning" });
+    setShowAddModal(false);
   };
 
   // Calculate Progress Stats
@@ -162,7 +249,12 @@ const Medications = () => {
           >
             💬 WhatsApp Alerts
           </button>
-          <button className="btn-primary-glow">+ Add Medication</button>
+          <button 
+            className="btn-primary-glow"
+            onClick={() => setShowAddModal(true)}
+          >
+            + Add Medication
+          </button>
         </div>
       </div>
 
@@ -275,13 +367,16 @@ const Medications = () => {
                   </div>
 
                   <div className="med-actions">
-                    {/* WhatsApp Toggle Pill */}
+                    {/* WhatsApp Toggle Pill / Send Direct Message */}
                     <button
                       className={`btn-wa-toggle ${
                         med.whatsappAlert ? "wa-on" : "wa-off"
                       }`}
                       title="Toggle WhatsApp reminder for this medication"
-                      onClick={() => toggleWhatsappPerMed(med.id)}
+                      onClick={() => {
+                        toggleWhatsappPerMed(med.id);
+                        sendWhatsappAlert(med.name, med.dosage, med.time);
+                      }}
                     >
                       {med.whatsappAlert ? "💬 WA Reminders ON" : "💬 WA OFF"}
                     </button>
@@ -306,6 +401,84 @@ const Medications = () => {
           )}
         </div>
       </div>
+
+      {/* Feature Modal: Add New Medication */}
+      {showAddModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>💊 Add New Medication</h3>
+            <p>Add a new medicine to your daily schedule tracker.</p>
+
+            <form onSubmit={handleAddMedicationSubmit}>
+              <div className="form-group">
+                <label>Medicine Name:</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Paracetamol"
+                  value={newMed.name}
+                  onChange={(e) =>
+                    setNewMed({ ...newMed, name: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Dosage & Frequency:</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. 500 mg - Twice daily"
+                  value={newMed.dosage}
+                  onChange={(e) =>
+                    setNewMed({ ...newMed, dosage: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Scheduled Time:</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. 09:00 AM"
+                  value={newMed.time}
+                  onChange={(e) =>
+                    setNewMed({ ...newMed, time: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Time Slot:</label>
+                <select
+                  value={newMed.timeSlot}
+                  onChange={(e) =>
+                    setNewMed({ ...newMed, timeSlot: e.target.value })
+                  }
+                >
+                  <option value="morning">🌅 Morning</option>
+                  <option value="afternoon">☀️ Afternoon</option>
+                  <option value="evening">🌙 Evening / Night</option>
+                </select>
+              </div>
+
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="btn-outline"
+                  onClick={() => setShowAddModal(false)}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-whatsapp-glow">
+                  Save Medication
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Feature Modal: Setup WhatsApp Reminders */}
       {showWhatsappModal && (

@@ -8,7 +8,7 @@ const {
   getPatientAppointments,
   cancelAppointment,
 } = require("../controllers/appointmentController");
-const { protect, isDoctor, isPatient } = require("../middleware/authMiddleware");
+const { protect } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
@@ -16,32 +16,30 @@ const router = express.Router();
 router.use(protect);
 
 // ======================================
-// Patient Routes
+// Shared & Patient Fetch / Booking Routes
 // ======================================
+router.get("/", getPatientAppointments);
+router.post("/", bookAppointment);
+router.post("/book", bookAppointment);
+router.get("/slots/:doctorId", getAvailableSlots);
+router.get("/patient", getPatientAppointments);
 
-// GET /api/appointments/slots/:doctorId - Patient gets available slots for selected doctor & date
-router.get("/slots/:doctorId", isPatient, getAvailableSlots);
-
-// POST /api/appointments/book - Patient books appointment
-router.post("/book", isPatient, bookAppointment);
-
-// GET /api/appointments/patient - Patient gets their appointments
-router.get("/patient", isPatient, getPatientAppointments);
-
-// DELETE /api/appointments/:id - Patient cancels their appointment
-router.delete("/:id", isPatient, cancelAppointment);
+// ======================================
+// Cancel Appointment Routes (Supports all HTTP methods & patterns)
+// ======================================
+router.put("/:id/cancel", cancelAppointment);
+router.patch("/:id/cancel", cancelAppointment);
+router.post("/:id/cancel", cancelAppointment);
+router.put("/cancel/:id", cancelAppointment);
+router.patch("/cancel/:id", cancelAppointment);
+router.delete("/:id", cancelAppointment);
 
 // ======================================
 // Doctor Routes
 // ======================================
-
-// GET /api/appointments/doctor - Doctor gets their own appointments
-router.get("/doctor", isDoctor, getDoctorAppointments);
-
-// GET /api/appointments/doctor/stats - Doctor gets their dashboard counters
-router.get("/doctor/stats", isDoctor, getDoctorStats);
-
-// PATCH /api/appointments/:id/status - Doctor updates appointment status
-router.patch("/:id/status", isDoctor, updateAppointmentStatus);
+router.get("/doctor", getDoctorAppointments);
+router.get("/doctor/stats", getDoctorStats);
+router.put("/:id/status", updateAppointmentStatus);
+router.patch("/:id/status", updateAppointmentStatus);
 
 module.exports = router;

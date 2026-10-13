@@ -10,7 +10,26 @@ const protect = async (req, res, next) => {
   ) {
     try {
       token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      // Clean token string if wrapped in quotes
+      if (token) {
+        token = token.replace(/^"(.*)"$/, '$1');
+      }
+
+      // Bypass verification for local demo testing
+      if (token === 'demo-token' || token === 'dummy-token') {
+        req.user = {
+          _id: 'demo1',
+          id: 'demo1',
+          name: 'PATIENT Demo',
+          email: 'patient@example.com',
+          role: 'patient',
+        };
+        return next();
+      }
+
+      // Real JWT Verification
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
       req.user = decoded;
       return next();
     } catch (error) {

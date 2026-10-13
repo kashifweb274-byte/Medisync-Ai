@@ -1,85 +1,11 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
 const Report = require("../models/Report");
+const User = require("../models/User");
 const fs = require("fs");
 const path = require("path");
-
-// Active Gemini Models supported by your API Key
-const MODELS_TO_TRY = [
-  "gemini-3.6-flash",
-  "gemini-3.5-flash",
-  "gemini-2.5-flash-lite"
-];
-
-const stripGeminiJsonMarkdown = (rawText) => {
-  if (typeof rawText !== "string") return rawText;
-  return rawText
-    .replace(/```json\s*/gi, "")
-    .replace(/```/g, "")
-    .trim();
-};
-
-async function analyzeWithGemini(fileBuffer, mimeType, apiKey) {
-  if (!apiKey) {
-    console.error("❌ GEMINI_API_KEY environment variable is missing!");
-    throw new Error("GEMINI_API_KEY is missing in server environment");
-  }
-
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const base64Data = fileBuffer.toString("base64");
-
-  const prompt = `You are an expert medical report parser AI.
-Analyze this medical report (PDF or scanned image) thoroughly.
-Extract ALL lab tests, values, units, reference ranges, and findings present in the document.
-
-CRITICAL INSTRUCTIONS:
-1. Extract actual values directly from the document. Do NOT make up values.
-2. If Blood Pressure is 150/95 or elevated, set overallRisk to "High Risk".
-3. Return ONLY a raw JSON object matching this schema without markdown code blocks:
-
-{
-  "summary": "Detailed 2-line summary of extracted health metrics and abnormal values.",
-  "executiveSummary": "Short executive summary of findings.",
-  "keyMetrics": [
-    { "name": "Parameter Name", "value": "Extracted Value", "referenceRange": "Normal Range", "status": "normal/high/low" }
-  ],
-  "overallRisk": "Low Risk / Moderate Risk / High Risk"
-}`;
-
-  let lastError = null;
-
-  for (const currentModel of MODELS_TO_TRY) {
-    try {
-      console.log(`➡️ Attempting extraction with model: ${currentModel}`);
-      const model = genAI.getGenerativeModel({
-        model: currentModel,
-        generationConfig: { responseMimeType: "application/json" }
-      });
-
-      const result = await model.generateContent([
-        {
-          inlineData: {
-            data: base64Data,
-            mimeType: mimeType || "application/pdf",
-          },
-        },
-        prompt,
-      ]);
-
-      const rawText = result.response.text();
-      console.log(`✅ Extraction successful using model: ${currentModel}`);
-      const cleaned = stripGeminiJsonMarkdown(rawText);
-      return JSON.parse(cleaned);
-    } catch (err) {
-      console.error(`❌ Model [${currentModel}] failed:`, err.message);
-      lastError = err;
-    }
-  }
-
-  throw new Error(`Gemini Parsing Failed for all models: ${lastError?.message || "Unknown error"}`);
-}
+const { analyzeReport, GeminiServiceError, MEDICAL_DISCLAIMER } = require("../services/geminiService");
 
 // 1. Upload & Analyze Handler
-exports.uploadReport = async (req, res) => {
+const uploadReport = async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, message: "No file uploaded" });
@@ -96,13 +22,15 @@ exports.uploadReport = async (req, res) => {
       return res.status(400).json({ success: false, message: "Unable to read uploaded file buffer" });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY || "";
-    let mimeType = req.file.mimetype;
-    if (!mimeType || mimeType === "application/octet-stream") {
-      mimeType = req.file.originalname.toLowerCase().endsWith(".pdf") ? "application/pdf" : "image/jpeg";
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    const mimeType = ({ ".pdf": "application/pdf", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg" })[ext];
+    if (!mimeType || (req.file.mimetype && req.file.mimetype !== "application/octet-stream" && req.file.mimetype !== mimeType && !(ext === ".jpg" && req.file.mimetype === "image/jpg"))) {
+      if (req.file.path && fs.existsSync(req.file.path)) {
+        try { fs.unlinkSync(req.file.path); } catch { /* ignore cleanup failure */ }
+      }
+      return res.status(400).json({ success: false, message: "Only valid PDF, PNG, and JPG files are supported." });
     }
-
-    const extractedData = await analyzeWithGemini(fileBuffer, mimeType, apiKey);
+    const extractedData = await analyzeReport(fileBuffer, mimeType);
 
     const summaryText = extractedData.summary || extractedData.executiveSummary || "Medical report uploaded and analyzed successfully.";
 
@@ -110,10 +38,13 @@ exports.uploadReport = async (req, res) => {
       summary: summaryText,
       executiveSummary: summaryText,
       keyMetrics: extractedData.keyMetrics || [],
-      overallRisk: extractedData.overallRisk || "Low Risk"
+      overallRisk: extractedData.overallRisk || "Unknown",
+      recommendations: extractedData.recommendations || [],
+      abnormalFindings: extractedData.abnormalFindings || [],
+      disclaimer: MEDICAL_DISCLAIMER
     };
 
-    const patientId = req.user ? (req.user._id || req.user.id) : "64b73734a633bfb613e9c4ae";
+    const patientId = req.user ? (req.user._id || req.user.id || req.user.userId) : "demo1";
     const filename = req.file.filename || req.file.originalname;
 
     const newReport = new Report({
@@ -122,6 +53,7 @@ exports.uploadReport = async (req, res) => {
       fileUrl: `/uploads/reports/${filename}`,
       reportType: "Health Report",
       aiSummary: formattedAiSummary,
+      sharedWith: []
     });
 
     await newReport.save();
@@ -132,27 +64,120 @@ exports.uploadReport = async (req, res) => {
       report: newReport,
     });
   } catch (error) {
-    console.error("❌ Upload Controller Error:", error);
+    if (req.file?.path && fs.existsSync(req.file.path)) {
+      try { fs.unlinkSync(req.file.path); } catch { /* retain the original request error */ }
+    }
+    if (error instanceof GeminiServiceError) {
+      console.error(`Report analysis failed. Status: ${error.status}. Reason: ${error.reason}.`);
+      return res.status(error.status).json({ success: false, message: error.message });
+    }
+    console.error("Report upload failed:", error.message);
     return res.status(500).json({
       success: false,
-      message: error.message || "Failed to process report",
+      message: "We could not analyze this report right now. Please try again later.",
     });
   }
 };
 
 // 2. Fetch Patient Reports
-exports.getPatientReports = async (req, res) => {
+const getPatientReports = async (req, res) => {
   try {
-    const patientId = req.user ? (req.user._id || req.user.id) : "64b73734a633bfb613e9c4ae";
-    const reports = await Report.find({ patientId }).sort({ createdAt: -1 });
+    const rawUserId = req.user ? (req.user._id || req.user.id || req.user.userId) : "demo1";
+    const userEmail = String(req.user?.email || "").toLowerCase();
+
+    const reports = await Report.find({
+      $or: [
+        { patientId: rawUserId },
+        { "sharedWith.doctorEmail": userEmail },
+        { "sharedWith.doctorEmail": { $regex: new RegExp(`^${userEmail}$`, "i") } }
+      ]
+    }).sort({ createdAt: -1 });
+
     return res.status(200).json({ success: true, reports });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// 3. Fetch Single Report By ID
-exports.getReportById = async (req, res) => {
+// 3. Share Report With Doctor
+const shareReport = async (req, res) => {
+  try {
+    const reportId = req.params.id || req.body.reportId;
+    const { email, doctorEmail, notes } = req.body;
+    const targetEmail = String(doctorEmail || email || "").trim().toLowerCase();
+
+    if (!targetEmail) {
+      return res.status(400).json({ success: false, message: "Doctor email address is required" });
+    }
+
+    const report = await Report.findById(reportId);
+    if (!report) {
+      return res.status(404).json({ success: false, message: "Report not found" });
+    }
+
+    if (!Array.isArray(report.sharedWith)) {
+      report.sharedWith = [];
+    }
+
+    const isAlreadyShared = report.sharedWith.some(
+      (s) => String(s.doctorEmail || s).toLowerCase() === targetEmail
+    );
+
+    if (isAlreadyShared) {
+      return res.status(400).json({ success: false, message: "Already shared with this doctor." });
+    }
+
+    const patientId = req.user ? (req.user._id || req.user.id) : report.patientId;
+
+    report.sharedWith.push({
+      doctorEmail: targetEmail,
+      patientId: patientId,
+      notes: notes || "",
+      sharedAt: new Date()
+    });
+
+    await report.save();
+
+    return res.status(200).json({
+      success: true,
+      message: `Report successfully shared with ${targetEmail}`,
+      report
+    });
+  } catch (error) {
+    console.error("❌ Share Report Error:", error);
+    return res.status(500).json({ success: false, message: error.message || "Failed to share report" });
+  }
+};
+
+// 4. Fetch Doctor Shared Reports
+const getDoctorReports = async (req, res) => {
+  try {
+    const doctorEmail = String(req.user?.email || "faisal@gmail.com").toLowerCase();
+    const doctorId = req.user?._id || req.user?.id;
+
+    const reports = await Report.find({
+      $or: [
+        { "sharedWith.doctorEmail": doctorEmail },
+        { "sharedWith.doctorEmail": { $regex: new RegExp(`^${doctorEmail}$`, "i") } },
+        { "sharedWith.patientId": doctorId }
+      ]
+    })
+      .populate("patientId", "name email phone profileImage")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      reports: reports || []
+    });
+  } catch (error) {
+    console.error("❌ Get Doctor Reports Error:", error);
+    return res.status(500).json({ success: true, reports: [] });
+  }
+};
+
+// 5. Fetch Single Report By ID
+const getReportById = async (req, res) => {
   try {
     const report = await Report.findById(req.params.id);
     if (!report) return res.status(404).json({ success: false, message: "Report not found" });
@@ -162,8 +187,8 @@ exports.getReportById = async (req, res) => {
   }
 };
 
-// 4. Delete Report
-exports.deleteReport = async (req, res) => {
+// 6. Delete Report
+const deleteReport = async (req, res) => {
   try {
     const report = await Report.findById(req.params.id);
     if (!report) return res.status(404).json({ success: false, message: "Report not found" });
@@ -171,7 +196,9 @@ exports.deleteReport = async (req, res) => {
     if (report.fileUrl) {
       const relativeUrl = report.fileUrl.startsWith("/") ? report.fileUrl.slice(1) : report.fileUrl;
       const filePath = path.join(__dirname, "..", relativeUrl);
-      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      if (fs.existsSync(filePath)) {
+        try { fs.unlinkSync(filePath); } catch (e) { /* ignore */ }
+      }
     }
 
     await Report.findByIdAndDelete(req.params.id);
@@ -179,4 +206,15 @@ exports.deleteReport = async (req, res) => {
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
+};
+
+module.exports = {
+  uploadReport,
+  getPatientReports,
+  getReports: getPatientReports,
+  shareReport,
+  shareReportWithDoctor: shareReport,
+  getDoctorReports,
+  getReportById,
+  deleteReport,
 };
